@@ -18,6 +18,17 @@ type ProjectIdea struct {
 
 	TeamRequirements string `gorm:"type:text" json:"team_requirements"`
 
+	// Project Goal, vision, milestones
+	Goal string `gorm:"type:text" json:"goal"`
+
+	// Funding plans, budget, usage of funds
+	FundPlans  string `gorm:"type:text" json:"fund_plans"`
+	TargetFund string `gorm:"type:varchar(100)" json:"target_fund"`
+
+	// External links
+	GithubURL   string `gorm:"type:varchar(255)" json:"github_url,omitempty"`
+	LiveDemoURL string `gorm:"type:varchar(255)" json:"live_demo_url,omitempty"`
+
 	// User ID string of the idea owner.
 	OwnerID      string `gorm:"type:varchar(64);not null;index" json:"owner_id"`
 	OwnerName    string `gorm:"type:varchar(255)" json:"owner_name"`

@@ -26,6 +26,7 @@ func main() {
 		&models.JoinRequest{},
 		&models.PageView{},
 		&models.Feedback{},
+		&models.ChatMessage{},
 	); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}

@@ -103,6 +103,11 @@ type CreateIdeaRequest struct {
 	Technologies     string `json:"technologies"`
 	RequiredSkills   string `json:"required_skills"`
 	TeamRequirements string `json:"team_requirements"`
+	Goal             string `json:"goal"`
+	FundPlans        string `json:"fund_plans"`
+	TargetFund       string `json:"target_fund"`
+	GithubURL        string `json:"github_url"`
+	LiveDemoURL      string `json:"live_demo_url"`
 }
 
 // POST /api/v1/ideas
@@ -144,6 +149,11 @@ func (ic *IdeaController) CreateIdea(c *gin.Context) {
 		Technologies:     strings.TrimSpace(req.Technologies),
 		RequiredSkills:   strings.TrimSpace(req.RequiredSkills),
 		TeamRequirements: strings.TrimSpace(req.TeamRequirements),
+		Goal:             strings.TrimSpace(req.Goal),
+		FundPlans:        strings.TrimSpace(req.FundPlans),
+		TargetFund:       strings.TrimSpace(req.TargetFund),
+		GithubURL:        strings.TrimSpace(req.GithubURL),
+		LiveDemoURL:      strings.TrimSpace(req.LiveDemoURL),
 		OwnerID:          strconv.Itoa(int(userID)),
 		OwnerName:        user.Name,
 		OwnerCollege:     user.College,
