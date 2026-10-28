@@ -17,7 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE } from "@/api";
 
 export default function MobileAppBanner() {
   const reduce = useReducedMotion();

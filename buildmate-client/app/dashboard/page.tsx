@@ -31,6 +31,9 @@ import {
   ArrowUpRight,
   MessageSquarePlus,
   Compass,
+  Award,
+  Zap,
+  Ticket,
 } from "lucide-react";
 import {
   useCurrentUser,
@@ -41,8 +44,14 @@ import {
   DashboardSummary,
   getStoredToken,
   getCurrentUser,
+  ProjectTask,
+  RewardTicket,
+  fetchUserTasks,
+  fetchUserTickets,
 } from "../lib/auth";
+import { API_BASE } from "@/api";
 import FeedbackModal from "../Components/FeedbackModal";
+import RewardTicketModal from "../Components/RewardTicketModal";
 
 const AVAILABLE_SKILLS = [
   "Frontend",
@@ -88,11 +97,19 @@ function DashboardContent() {
   const user = useCurrentUser();
   const [mounted, setMounted] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "profile">(initialTab);
+  const [activeTab, setActiveTab] = useState<"overview" | "profile" | "tasks">(
+    searchParams.get("tab") === "tasks" ? "tasks" : initialTab
+  );
 
   // Summary data
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(true);
+
+  // User tasks and rewards state
+  const [userTasks, setUserTasks] = useState<ProjectTask[]>([]);
+  const [userTickets, setUserTickets] = useState<RewardTicket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<RewardTicket | null>(null);
+  const [loadingTasksAndTickets, setLoadingTasksAndTickets] = useState(false);
 
   // Toast
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -155,9 +172,25 @@ function DashboardContent() {
     setLoadingSummary(false);
   };
 
+  const loadTasksAndTickets = async () => {
+    setLoadingTasksAndTickets(true);
+    const [tasksRes, ticketsRes] = await Promise.all([
+      fetchUserTasks(),
+      fetchUserTickets(),
+    ]);
+    if (tasksRes.success && tasksRes.data) {
+      setUserTasks(tasksRes.data);
+    }
+    if (ticketsRes.success && ticketsRes.data) {
+      setUserTickets(ticketsRes.data);
+    }
+    setLoadingTasksAndTickets(false);
+  };
+
   useEffect(() => {
     if (user?.id) {
       void loadSummary();
+      void loadTasksAndTickets();
     }
   }, [user?.id]);
 
@@ -167,7 +200,7 @@ function DashboardContent() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:8081/api/v1/ideas/${projectId}/requests/${requestId}`, {
+      const res = await fetch(`${API_BASE}/api/v1/ideas/${projectId}/requests/${requestId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -442,6 +475,22 @@ function DashboardContent() {
               >
                 <Settings size={15} />
                 Profile Settings
+              </button>
+              <button
+                onClick={() => setActiveTab("tasks")}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                  activeTab === "tasks"
+                    ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
+                    : "text-slate-600 hover:text-[#0E1633]"
+                }`}
+              >
+                <Award size={15} />
+                <span>Tasks & Rewards</span>
+                {userTickets.length > 0 && (
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 px-1.5 py-0.2 text-[10px] font-bold">
+                    {userTickets.length}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -967,10 +1016,291 @@ function DashboardContent() {
             </section>
           </div>
         )}
+
+        {/* ========================================================= */}
+        {/* TAB 3: TASKS & REWARD TICKETS */}
+        {/* ========================================================= */}
+        {activeTab === "tasks" && (
+          <div className="space-y-8">
+            {/* Stat Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-3xl border border-yellow-200 bg-gradient-to-br from-yellow-50 to-amber-50 p-6 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                    Total Reward Points
+                  </span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-yellow-400 text-yellow-950">
+                    <Sparkles size={16} />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-black text-amber-950">
+                  {userTickets.reduce((acc, t) => acc + (t.reward_points || 0), 0)} XP
+                </div>
+                <div className="mt-1 text-xs text-amber-700">
+                  Earned across all completed sprint tasks
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                    Reward Passes Issued
+                  </span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-white">
+                    <Award size={16} />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-black text-emerald-950">
+                  {userTickets.length}
+                </div>
+                <div className="mt-1 text-xs text-emerald-700">
+                  Certified on-time delivery passes
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-[#D5DBEB] bg-white p-6 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#5B6584]">
+                    Assigned Tasks
+                  </span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#2342F5] text-white">
+                    <Layers3 size={16} />
+                  </div>
+                </div>
+                <div className="mt-3 text-3xl font-black text-[#0E1633]">
+                  {userTasks.length}
+                </div>
+                <div className="mt-1 text-xs text-[#5B6584]">
+                  {userTasks.filter((t) => t.status !== "completed").length} active deadlines
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 1: REWARD TICKETS VAULT */}
+            <section className="rounded-3xl border border-[#D5DBEB] bg-white p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex items-center justify-between border-b border-[#F0F2FA] pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-yellow-400 to-amber-500 text-white shadow-md">
+                    <Award size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold font-display text-[#0E1633]">
+                      Official Reward Tickets Vault
+                    </h2>
+                    <p className="text-xs text-[#5B6584]">
+                      Every time you beat the clock, an authenticated digital pass is unlocked
+                    </p>
+                  </div>
+                </div>
+
+                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
+                  {userTickets.length} Passes Claimed
+                </span>
+              </div>
+
+              {userTickets.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#D5DBEB] bg-[#F8FAFF] p-8 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-700 mb-3">
+                    <Ticket size={24} />
+                  </div>
+                  <h3 className="text-sm font-bold text-[#0E1633]">No reward tickets yet</h3>
+                  <p className="mt-1 text-xs text-[#5B6584] max-w-sm mx-auto">
+                    Collaborate on project teams and complete tasks before the deadline to automatically receive official BuildMate reward passes!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {userTickets.map((ticket) => (
+                    <div
+                      key={ticket.id}
+                      className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0E1633] text-white p-5 shadow-lg transition hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between"
+                    >
+                      {/* Ticket header line */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                            ON-TIME VERIFIED
+                          </span>
+                          <span className="font-mono text-[11px] font-bold text-yellow-300">
+                            +{ticket.reward_points} XP
+                          </span>
+                        </div>
+
+                        <div className="text-xs font-mono text-gray-400 tracking-wider">
+                          {ticket.ticket_number}
+                        </div>
+                        <h4 className="mt-1 text-base font-bold text-white group-hover:text-blue-300 transition">
+                          {ticket.reward_title || "Completion Pass"}
+                        </h4>
+
+                        <div className="mt-3 rounded-xl bg-white/[0.04] p-2.5 space-y-1 text-xs border border-white/5">
+                          <div className="text-gray-400 text-[10px] uppercase font-semibold">Deliverable</div>
+                          <div className="font-semibold text-gray-200 line-clamp-1">{ticket.task_title}</div>
+                          {ticket.project && (
+                            <div className="text-[11px] text-[#4361EE] line-clamp-1">
+                              Project: {ticket.project.title}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                        <span className="text-[10px] text-gray-400">
+                          {new Date(ticket.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTicket(ticket)}
+                          className="flex items-center gap-1 text-xs font-bold text-[#4361EE] hover:text-blue-300 transition"
+                        >
+                          <span>Inspect Voucher</span>
+                          <ArrowUpRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* SECTION 2: ASSIGNED TASKS ACROSS PROJECTS */}
+            <section className="rounded-3xl border border-[#D5DBEB] bg-white p-6 sm:p-8 shadow-xs space-y-6">
+              <div className="flex items-center justify-between border-b border-[#F0F2FA] pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#2342F5] to-[#4361EE] text-white shadow-md">
+                    <Layers3 size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold font-display text-[#0E1633]">
+                      My Assigned Tasks & Deadlines
+                    </h2>
+                    <p className="text-xs text-[#5B6584]">
+                      Track your upcoming sprint deliverables and beat the timer
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {userTasks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-[#D5DBEB] bg-[#F8FAFF] p-8 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#2342F5] mb-3">
+                    <Layers3 size={24} />
+                  </div>
+                  <h3 className="text-sm font-bold text-[#0E1633]">No tasks currently assigned</h3>
+                  <p className="mt-1 text-xs text-[#5B6584] max-w-sm mx-auto">
+                    When project owners assign you deliverables, they will appear here with live deadlines and reward perks.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {userTasks.map((t) => {
+                    const isCompleted = t.status === "completed";
+                    const isOverdue = !isCompleted && new Date(t.deadline).getTime() < Date.now();
+                    const diffMs = new Date(t.deadline).getTime() - Date.now();
+                    const hoursLeft = Math.floor(diffMs / (1000 * 60 * 60));
+                    const daysLeft = Math.floor(hoursLeft / 24);
+
+                    return (
+                      <div
+                        key={t.id}
+                        className={`rounded-3xl border bg-white p-5 shadow-xs flex flex-col justify-between transition hover:shadow-md ${
+                          isCompleted
+                            ? "border-emerald-200"
+                            : isOverdue
+                            ? "border-rose-200"
+                            : "border-[#D5DBEB]"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                isCompleted
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : t.status === "in_progress"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
+                              {t.status === "in_progress" ? "In Progress" : t.status}
+                            </span>
+
+                            <span
+                              className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                                isCompleted
+                                  ? t.is_completed_on_time
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-gray-100 text-gray-600 border-gray-200"
+                                  : isOverdue
+                                  ? "bg-rose-50 text-rose-700 border-rose-200 animate-pulse font-bold"
+                                  : daysLeft <= 1
+                                  ? "bg-amber-50 text-amber-700 border-amber-200 font-bold"
+                                  : "bg-blue-50 text-blue-700 border-blue-200"
+                              }`}
+                            >
+                              {isCompleted
+                                ? t.is_completed_on_time
+                                  ? "Completed On-Time"
+                                  : "Completed Late"
+                                : isOverdue
+                                ? "Overdue"
+                                : daysLeft > 0
+                                ? `${daysLeft}d left`
+                                : `${hoursLeft}h left`}
+                            </span>
+                          </div>
+
+                          <h4 className="text-base font-bold text-[#0E1633]">{t.title}</h4>
+                          {t.description && (
+                            <p className="mt-1 text-xs text-[#5B6584] line-clamp-2">
+                              {t.description}
+                            </p>
+                          )}
+
+                          <div className="mt-3 flex items-center justify-between text-xs text-[#5B6584] pt-2 border-t border-[#F0F2FA]">
+                            <span className="font-semibold text-[#0E1633]">
+                              {t.project ? t.project.title : `Project #${t.project_id}`}
+                            </span>
+                            <span className="font-bold text-yellow-700 flex items-center gap-1">
+                              <Sparkles size={12} className="text-yellow-500" />
+                              +{t.reward_points} XP
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-[#F0F2FA] flex items-center justify-between">
+                          <span className="text-[11px] text-[#7B85A0]">
+                            Due: {new Date(t.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+
+                          <Link
+                            href={`/ideas/${t.project_id}?tab=tasks`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#2342F5] hover:underline"
+                          >
+                            <span>Open Project Workspace</span>
+                            <ArrowUpRight size={13} />
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
       </div>
 
       {/* Feedback & Suggestions Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Reward Ticket Modal */}
+      {selectedTicket && (
+        <RewardTicketModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+        />
+      )}
     </main>
   );
 }

@@ -40,7 +40,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE } from "@/api";
 
 type MainTab = "projects" | "users" | "analytics" | "feedback";
 type IdeaStatus = "all" | "pending" | "approved" | "rejected";

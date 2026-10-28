@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Sparkles, X, CheckCircle, AlertCircle, Loader2, Code2, Send, Mail } from "lucide-react";
 import { useCurrentUser } from "../lib/auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE as API_URL } from "@/api";
 
 interface JoinDevTeamModalProps {
   isOpen: boolean;

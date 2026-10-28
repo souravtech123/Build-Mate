@@ -37,7 +37,7 @@ import {
 import { useCurrentUser, getStoredToken, clearAuth } from "../lib/auth";
 import FeedbackModal from "../Components/FeedbackModal";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE as API_URL } from "@/api";
 
 type ProjectIdea = {
   id: number;

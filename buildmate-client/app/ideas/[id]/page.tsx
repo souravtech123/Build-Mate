@@ -29,16 +29,32 @@ import {
   CheckCircle2,
   XCircle,
   Clock3,
+  Award,
+  Zap,
+  Plus,
+  Trash2,
+  Play,
+  CheckSquare,
+  Tag,
+  ChevronRight,
 } from "lucide-react";
 import {
   useCurrentUser,
   getStoredToken,
   ProjectIdea,
   JoinRequest,
+  ProjectTask,
+  RewardTicket,
+  fetchProjectTasks,
+  deleteProjectTask,
+  updateTaskStatus,
 } from "../../lib/auth";
 import TeamChat from "../../Components/TeamChat";
+import CreateTaskModal from "../../Components/CreateTaskModal";
+import CompleteTaskModal from "../../Components/CompleteTaskModal";
+import RewardTicketModal from "../../Components/RewardTicketModal";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE } from "@/api";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "Recently";
@@ -72,6 +88,54 @@ function splitTags(val?: string): string[] {
     .filter(Boolean);
 }
 
+function getDeadlineInfo(deadlineStr: string, status?: string, isCompletedOnTime?: boolean) {
+  if (status === "completed") {
+    if (isCompletedOnTime) {
+      return {
+        label: "Completed On-Time",
+        badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        isOverdue: false,
+      };
+    }
+    return {
+      label: "Completed (Late)",
+      badgeClass: "bg-gray-100 text-gray-600 border-gray-200",
+      isOverdue: true,
+    };
+  }
+
+  const diffMs = new Date(deadlineStr).getTime() - Date.now();
+  if (diffMs <= 0) {
+    return {
+      label: "Deadline Overdue",
+      badgeClass: "bg-rose-50 text-rose-700 border-rose-200 font-bold",
+      isOverdue: true,
+    };
+  }
+
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    const remHours = hours % 24;
+    return {
+      label: `${days}d ${remHours}h left`,
+      badgeClass:
+        days <= 1
+          ? "bg-amber-50 text-amber-700 border-amber-200 font-semibold"
+          : "bg-blue-50 text-blue-700 border-blue-200 font-semibold",
+      isOverdue: false,
+    };
+  }
+
+  const mins = Math.floor(diffMs / (1000 * 60));
+  return {
+    label: `${hours}h ${mins % 60}m left`,
+    badgeClass: "bg-amber-50 text-amber-700 border-amber-200 font-bold animate-pulse",
+    isOverdue: false,
+  };
+}
+
 function ProjectDetailContent() {
   const params = useParams();
   const router = useRouter();
@@ -85,8 +149,17 @@ function ProjectDetailContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Tabs: "overview", "chat", "applicants"
-  const [activeTab, setActiveTab] = useState<"overview" | "chat" | "applicants">("overview");
+  // Tabs: "overview", "chat", "applicants", "tasks"
+  const [activeTab, setActiveTab] = useState<"overview" | "chat" | "applicants" | "tasks">("overview");
+
+  // Project tasks and rewards state
+  const [tasks, setTasks] = useState<ProjectTask[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
+  const [completingTask, setCompletingTask] = useState<ProjectTask | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<RewardTicket | null>(null);
+  const [taskFilter, setTaskFilter] = useState<"all" | "my" | "completed" | "pending">("all");
+  const [deletingTaskId, setDeletingTaskId] = useState<number | null>(null);
 
   // Join application form state
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -120,6 +193,33 @@ function ProjectDetailContent() {
     const found = members.find((m) => Number(m.user_id) === Number(user?.id));
     return found?.role || "Team Member";
   }, [isOwner, members, user]);
+
+  const taskStats = useMemo(() => {
+    const total = tasks.length;
+    const completed = tasks.filter((t) => t.status === "completed").length;
+    const onTime = tasks.filter((t) => t.is_completed_on_time).length;
+    const inProgress = tasks.filter((t) => t.status === "in_progress").length;
+    const overdue = tasks.filter((t) => {
+      if (t.status === "completed") return false;
+      return new Date(t.deadline).getTime() < Date.now();
+    }).length;
+    return { total, completed, onTime, inProgress, overdue };
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      if (taskFilter === "my") {
+        return Number(t.assigned_to_user_id) === Number(user?.id);
+      }
+      if (taskFilter === "completed") {
+        return t.status === "completed";
+      }
+      if (taskFilter === "pending") {
+        return t.status !== "completed";
+      }
+      return true;
+    });
+  }, [tasks, taskFilter, user?.id]);
 
   // Fetch project details
   useEffect(() => {
@@ -159,6 +259,12 @@ function ProjectDetailContent() {
           if (reqRes.ok && reqData.success && Array.isArray(reqData.data)) {
             setApplicants(reqData.data);
           }
+        }
+
+        // Fetch project tasks
+        const tasksRes = await fetchProjectTasks(projectId);
+        if (tasksRes.success && tasksRes.data) {
+          setTasks(tasksRes.data);
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load project");
@@ -256,6 +362,42 @@ function ProjectDetailContent() {
       // ignore
     } finally {
       setReviewLoadingId(null);
+    }
+  };
+
+  // Start task handler
+  const handleStartTask = async (taskId: number) => {
+    const res = await updateTaskStatus(projectId, taskId, "in_progress");
+    if (res.success && res.data) {
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: "in_progress" } : t))
+      );
+    }
+  };
+
+  // Delete task handler (Owner only)
+  const handleDeleteTask = async (taskId: number) => {
+    if (!confirm("Are you sure you want to delete this task?")) return;
+    setDeletingTaskId(taskId);
+    const res = await deleteProjectTask(projectId, taskId);
+    setDeletingTaskId(null);
+    if (res.success) {
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+    }
+  };
+
+  // On task created callback
+  const handleTaskCreated = (newTask: ProjectTask) => {
+    setTasks((prev) => [newTask, ...prev]);
+  };
+
+  // On task completed callback
+  const handleTaskCompleted = (updatedTask: ProjectTask, ticket?: RewardTicket) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === updatedTask.id ? { ...t, ...updatedTask, ticket: ticket || t.ticket } : t))
+    );
+    if (ticket) {
+      setSelectedTicket(ticket);
     }
   };
 
@@ -506,6 +648,25 @@ function ProjectDetailContent() {
               )}
             </button>
           )}
+
+          {/* TAB 4: TASKS & REWARDS */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("tasks")}
+            className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition ${
+              activeTab === "tasks"
+                ? "border-[#2342F5] text-[#2342F5]"
+                : "border-transparent text-[#5B6584] hover:text-[#0E1633]"
+            }`}
+          >
+            <Award size={16} />
+            <span>Tasks & Rewards</span>
+            {tasks.length > 0 && (
+              <span className="rounded-full bg-blue-100 text-[#2342F5] px-2 py-0.5 text-[10px] font-bold">
+                {tasks.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* TAB 1: OVERVIEW & COMPLETE DETAILS */}
@@ -887,6 +1048,308 @@ function ProjectDetailContent() {
             )}
           </div>
         )}
+
+        {/* TAB 4: TASKS, DEADLINES & REWARD TICKETS */}
+        {activeTab === "tasks" && (
+          <div className="space-y-6">
+            {/* Top Stat Summary Banner */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="rounded-2xl border border-[#D5DBEB] bg-white p-4 shadow-xs">
+                <div className="text-xs font-semibold text-[#7B85A0]">Total Tasks</div>
+                <div className="mt-1 text-2xl font-bold text-[#0E1633]">{taskStats.total}</div>
+                <div className="mt-1 text-[11px] text-[#5B6584]">Assigned to members</div>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-xs">
+                <div className="text-xs font-semibold text-emerald-800">Completed On-Time</div>
+                <div className="mt-1 text-2xl font-bold text-emerald-700 flex items-center gap-1.5">
+                  <CheckCircle2 size={22} />
+                  <span>{taskStats.onTime}</span>
+                </div>
+                <div className="mt-1 text-[11px] font-semibold text-emerald-600">
+                  {taskStats.onTime} Reward Tickets Issued
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 shadow-xs">
+                <div className="text-xs font-semibold text-blue-800">In Progress</div>
+                <div className="mt-1 text-2xl font-bold text-blue-700">{taskStats.inProgress}</div>
+                <div className="mt-1 text-[11px] text-blue-600">Under development</div>
+              </div>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-xs">
+                <div className="text-xs font-semibold text-amber-800">Overdue Tasks</div>
+                <div className="mt-1 text-2xl font-bold text-amber-700">{taskStats.overdue}</div>
+                <div className="mt-1 text-[11px] text-amber-600">Deadline elapsed</div>
+              </div>
+            </div>
+
+            {/* Controls Bar: Filters & Assign Button */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#D5DBEB] bg-white p-4 shadow-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#7B85A0] mr-1">
+                  Filter:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setTaskFilter("all")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                    taskFilter === "all"
+                      ? "bg-[#2342F5] text-white shadow-xs"
+                      : "bg-[#F8FAFF] text-[#5B6584] hover:bg-gray-100"
+                  }`}
+                >
+                  All ({tasks.length})
+                </button>
+                {user && (
+                  <button
+                    type="button"
+                    onClick={() => setTaskFilter("my")}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                      taskFilter === "my"
+                        ? "bg-[#2342F5] text-white shadow-xs"
+                        : "bg-[#F8FAFF] text-[#5B6584] hover:bg-gray-100"
+                    }`}
+                  >
+                    My Tasks ({tasks.filter((t) => Number(t.assigned_to_user_id) === Number(user.id)).length})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setTaskFilter("pending")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                    taskFilter === "pending"
+                      ? "bg-[#2342F5] text-white shadow-xs"
+                      : "bg-[#F8FAFF] text-[#5B6584] hover:bg-gray-100"
+                  }`}
+                >
+                  Active ({tasks.filter((t) => t.status !== "completed").length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTaskFilter("completed")}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                    taskFilter === "completed"
+                      ? "bg-[#2342F5] text-white shadow-xs"
+                      : "bg-[#F8FAFF] text-[#5B6584] hover:bg-gray-100"
+                  }`}
+                >
+                  Completed ({tasks.filter((t) => t.status === "completed").length})
+                </button>
+              </div>
+
+              {/* Owner Action: Assign New Task */}
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => setShowCreateTaskModal(true)}
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#2342F5] to-[#4361EE] px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:opacity-95 transition"
+                >
+                  <Plus size={15} />
+                  <span>Assign New Task</span>
+                </button>
+              )}
+            </div>
+
+            {/* Tasks Cards List */}
+            {filteredTasks.length === 0 ? (
+              <div className="rounded-3xl border border-[#D5DBEB] bg-white p-12 text-center shadow-xs">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF1FF] text-[#2342F5] mb-3">
+                  <Award size={28} />
+                </div>
+                <h3 className="text-base font-bold text-[#0E1633]">
+                  {taskFilter === "my"
+                    ? "No tasks assigned to you yet"
+                    : tasks.length === 0
+                    ? "No tasks assigned in this project yet"
+                    : "No tasks match the selected filter"}
+                </h3>
+                <p className="mt-1 text-xs text-[#5B6584] max-w-sm mx-auto">
+                  {isOwner
+                    ? "Assign deadlines and deliverables to your team members. Members who finish on time automatically earn official Reward Tickets!"
+                    : "When the project owner assigns you tasks with deadlines, they will appear here with live countdowns."}
+                </p>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateTaskModal(true)}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#2342F5] px-4 py-2 text-xs font-bold text-white hover:bg-[#1c35c4] transition"
+                  >
+                    <Plus size={14} /> Assign First Task
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {filteredTasks.map((t) => {
+                  const deadlineInfo = getDeadlineInfo(t.deadline, t.status, t.is_completed_on_time);
+                  const isAssignedToCurrentUser = Number(t.assigned_to_user_id) === Number(user?.id);
+                  const canComplete = isAssignedToCurrentUser && t.status !== "completed";
+                  const canStart = isAssignedToCurrentUser && t.status === "assigned";
+
+                  return (
+                    <div
+                      key={t.id}
+                      className={`relative flex flex-col justify-between rounded-3xl border bg-white p-5 shadow-xs transition hover:shadow-md ${
+                        t.status === "completed"
+                          ? t.is_completed_on_time
+                            ? "border-emerald-200"
+                            : "border-gray-200"
+                          : deadlineInfo.isOverdue
+                          ? "border-rose-200"
+                          : "border-[#D5DBEB]"
+                      }`}
+                    >
+                      {/* Card Top: Priority & Status & Delete */}
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-2">
+                            {/* Priority badge */}
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                t.priority === "urgent"
+                                  ? "bg-rose-100 text-rose-700"
+                                  : t.priority === "high"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : t.priority === "low"
+                                  ? "bg-slate-100 text-slate-700"
+                                  : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {t.priority}
+                            </span>
+
+                            {/* Status badge */}
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                t.status === "completed"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : t.status === "in_progress"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-slate-100 text-slate-800"
+                              }`}
+                            >
+                              {t.status === "in_progress" ? "In Progress" : t.status}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Countdown / Deadline info badge */}
+                            <span
+                              className={`rounded-full border px-2.5 py-0.5 text-[11px] ${deadlineInfo.badgeClass}`}
+                            >
+                              {deadlineInfo.label}
+                            </span>
+
+                            {/* Owner delete button */}
+                            {isOwner && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTask(t.id)}
+                                disabled={deletingTaskId === t.id}
+                                className="rounded-lg p-1 text-gray-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                                title="Delete task"
+                              >
+                                {deletingTaskId === t.id ? (
+                                  <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                  <Trash2 size={13} />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Title & Description */}
+                        <h4 className="text-base font-bold text-[#0E1633] leading-snug">{t.title}</h4>
+                        {t.description && (
+                          <p className="mt-1 text-xs text-[#5B6584] line-clamp-3 leading-relaxed">
+                            {t.description}
+                          </p>
+                        )}
+
+                        {/* Assignee Row */}
+                        <div className="mt-4 flex items-center justify-between border-t border-[#F0F2FA] pt-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-tr from-[#2342F5] to-[#4361EE] text-white text-[10px] font-bold">
+                              {getInitials(t.assigned_to?.name)}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[#0E1633]">
+                                {t.assigned_to?.name || `Member #${t.assigned_to_user_id}`}
+                                {isAssignedToCurrentUser && (
+                                  <span className="ml-1 text-[10px] text-[#2342F5] font-semibold">
+                                    (You)
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-[#7B85A0]">
+                                Due {new Date(t.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Reward XP preview */}
+                          <div className="flex items-center gap-1 rounded-xl bg-yellow-50 border border-yellow-200/80 px-2.5 py-1 text-xs font-bold text-yellow-800">
+                            <Sparkles size={12} className="text-yellow-600" />
+                            <span>+{t.reward_points} XP</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Bottom: Actions */}
+                      <div className="mt-4 pt-3 border-t border-[#F0F2FA] flex flex-wrap items-center justify-between gap-2">
+                        {/* If completed & has ticket */}
+                        {t.ticket ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTicket(t.ticket!)}
+                            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:opacity-95 transition"
+                          >
+                            <Award size={14} />
+                            <span>View Reward Ticket</span>
+                            <span className="text-[10px] font-mono opacity-80">#{t.ticket.ticket_number.slice(-4)}</span>
+                          </button>
+                        ) : t.status === "completed" ? (
+                          <span className="text-[11px] font-semibold text-gray-500 flex items-center gap-1">
+                            <Clock3 size={13} /> Completed (Late submission)
+                          </span>
+                        ) : (
+                          <div className="text-[11px] text-[#7B85A0]">
+                            Reward perk: <strong className="text-[#0E1633]">{t.reward_title}</strong>
+                          </div>
+                        )}
+
+                        {/* Action buttons for assignee */}
+                        <div className="flex items-center gap-2 ml-auto">
+                          {canStart && (
+                            <button
+                              type="button"
+                              onClick={() => handleStartTask(t.id)}
+                              className="flex items-center gap-1 rounded-xl border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-bold text-purple-700 hover:bg-purple-100 transition"
+                            >
+                              <Play size={12} /> Start Task
+                            </button>
+                          )}
+
+                          {canComplete && (
+                            <button
+                              type="button"
+                              onClick={() => setCompletingTask(t)}
+                              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition"
+                            >
+                              <CheckCircle2 size={13} /> Complete & Claim
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* JOIN TEAM MODAL */}
@@ -983,6 +1446,34 @@ function ProjectDetailContent() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* CREATE TASK MODAL (OWNER) */}
+      {showCreateTaskModal && (
+        <CreateTaskModal
+          projectId={projectId}
+          members={members}
+          onClose={() => setShowCreateTaskModal(false)}
+          onCreated={handleTaskCreated}
+        />
+      )}
+
+      {/* COMPLETE TASK MODAL (MEMBER) */}
+      {completingTask && (
+        <CompleteTaskModal
+          projectId={projectId}
+          task={completingTask}
+          onClose={() => setCompletingTask(null)}
+          onSuccess={handleTaskCompleted}
+        />
+      )}
+
+      {/* REWARD TICKET MODAL */}
+      {selectedTicket && (
+        <RewardTicketModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+        />
       )}
     </main>
   );

@@ -23,7 +23,7 @@ interface TeamChatProps {
   userRole?: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE } from "@/api";
 
 function formatChatTime(timestamp?: string) {
   if (!timestamp) return "";

@@ -76,6 +76,56 @@ export interface ChatMessage {
   updated_at?: string;
 }
 
+export interface RewardTicket {
+  id: number;
+  ticket_number: string;
+  project_id: number;
+  project?: ProjectIdea;
+  task_id: number;
+  user_id: number;
+  user?: User;
+  task_title: string;
+  reward_title: string;
+  reward_points: number;
+  deadline: string;
+  completed_at: string;
+  status: "valid" | "claimed" | "redeemed";
+  badge_color: string;
+  created_at: string;
+}
+
+export interface ProjectTask {
+  id: number;
+  project_id: number;
+  project?: ProjectIdea;
+  title: string;
+  description: string;
+  assigned_to_user_id: number;
+  assigned_to?: User;
+  created_by_user_id: number;
+  deadline: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  reward_points: number;
+  reward_title: string;
+  status: "assigned" | "in_progress" | "completed" | "overdue";
+  completed_at?: string;
+  is_completed_on_time: boolean;
+  completion_note?: string;
+  ticket?: RewardTicket;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface CreateTaskInput {
+  title: string;
+  description: string;
+  assigned_to_user_id: number;
+  deadline: string;
+  priority: string;
+  reward_points: number;
+  reward_title: string;
+}
+
 export interface DashboardSummary {
   projects: any[];
   applications: any[];
@@ -87,7 +137,8 @@ export interface DashboardSummary {
   };
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE } from "@/api";
+export { API_BASE };
 
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -434,3 +485,191 @@ export async function fetchUserDashboardSummary(): Promise<{
     };
   }
 }
+
+export async function fetchProjectTasks(projectId: number): Promise<{
+  success: boolean;
+  data?: ProjectTask[];
+  message?: string;
+}> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/ideas/${projectId}/tasks`);
+    const body = await res.json();
+    return {
+      success: res.ok && body.success,
+      data: body.data || [],
+      message: body.message,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Network error fetching tasks",
+    };
+  }
+}
+
+export async function createProjectTask(
+  projectId: number,
+  data: CreateTaskInput
+): Promise<{
+  success: boolean;
+  data?: ProjectTask;
+  message?: string;
+}> {
+  const token = getStoredToken();
+  if (!token) {
+    return { success: false, message: "Not authenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/ideas/${projectId}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const body = await res.json();
+    return {
+      success: res.ok && body.success,
+      data: body.data,
+      message: body.message || (res.ok ? "Task created" : "Failed to create task"),
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Network error creating task",
+    };
+  }
+}
+
+export async function updateTaskStatus(
+  projectId: number,
+  taskId: number,
+  status: "in_progress" | "completed",
+  note?: string
+): Promise<{
+  success: boolean;
+  data?: { task: ProjectTask; ticket?: RewardTicket };
+  message?: string;
+}> {
+  const token = getStoredToken();
+  if (!token) {
+    return { success: false, message: "Not authenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/ideas/${projectId}/tasks/${taskId}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status, note }),
+    });
+    const body = await res.json();
+    return {
+      success: res.ok && body.success,
+      data: body.data,
+      message: body.message,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Network error updating task status",
+    };
+  }
+}
+
+export async function deleteProjectTask(
+  projectId: number,
+  taskId: number
+): Promise<{
+  success: boolean;
+  message?: string;
+}> {
+  const token = getStoredToken();
+  if (!token) {
+    return { success: false, message: "Not authenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/ideas/${projectId}/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const body = await res.json();
+    return {
+      success: res.ok && body.success,
+      message: body.message,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Network error deleting task",
+    };
+  }
+}
+
+export async function fetchUserTasks(): Promise<{
+  success: boolean;
+  data?: ProjectTask[];
+  message?: string;
+}> {
+  const token = getStoredToken();
+  if (!token) {
+    return { success: false, message: "Not authenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/user/tasks`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const body = await res.json();
+    return {
+      success: res.ok && body.success,
+      data: body.data || [],
+      message: body.message,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Network error fetching user tasks",
+    };
+  }
+}
+
+export async function fetchUserTickets(): Promise<{
+  success: boolean;
+  data?: RewardTicket[];
+  message?: string;
+}> {
+  const token = getStoredToken();
+  if (!token) {
+    return { success: false, message: "Not authenticated" };
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/user/tickets`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const body = await res.json();
+    return {
+      success: res.ok && body.success,
+      data: body.data || [],
+      message: body.message,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Network error fetching reward tickets",
+    };
+  }
+}
+

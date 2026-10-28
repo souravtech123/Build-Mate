@@ -37,7 +37,7 @@ const commonSkills = [
   "Product Management",
 ];
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+import { API_BASE as API_URL } from "@/api";
 
 export default function CreateIdeaPage() {
   const router = useRouter();

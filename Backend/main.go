@@ -27,6 +27,8 @@ func main() {
 		&models.PageView{},
 		&models.Feedback{},
 		&models.ChatMessage{},
+		&models.ProjectTask{},
+		&models.RewardTicket{},
 	); err != nil {
 		log.Fatalf("Failed to run database migrations: %v", err)
 	}
