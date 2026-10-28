@@ -20,10 +20,13 @@ func LoadConfig() *Config {
 		log.Println(".env file not found; using system environment variables")
 	}
 
-	port := os.Getenv("APP_PORT")
-	if port == "" {
-		port = "8081"
-	}
+port := os.Getenv("PORT")
+if port == "" {
+    port = os.Getenv("APP_PORT")
+}
+if port == "" {
+    port = "8081"
+}
 
 	env := os.Getenv("APP_ENV")
 	if env == "" {
