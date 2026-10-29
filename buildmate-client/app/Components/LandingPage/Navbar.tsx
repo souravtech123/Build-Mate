@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Code2, Menu, X, User as UserIcon, LayoutDashboard, LogOut, Users } from "lucide-react";
 import { useCurrentUser, clearAuth } from "../../lib/auth";
 import JoinDevTeamModal from "../JoinDevTeamModal";
+import InstallPWAButton from "../InstallPWAButton";
 
 const NAV_LINKS = [
   { label: "About", href: "/#about" },
@@ -133,17 +134,20 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile menu button */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5DBEB] bg-white transition hover:border-[#2342F5] md:hidden"
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-navigation"
-        >
-          {menuOpen ? <X size={21} /> : <Menu size={21} />}
-        </button>
+        {/* Mobile action area with install button and menu toggle */}
+        <div className="flex items-center gap-2 md:hidden">
+          <InstallPWAButton />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D5DBEB] bg-white transition hover:border-[#2342F5]"
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+          >
+            {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
       </nav>
 
       {/* Mobile navigation */}
@@ -172,29 +176,29 @@ export default function Navbar() {
               <div className="mt-3 border-t border-[#D5DBEB] pt-3">
                 {user ? (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3 px-3 py-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2342F5] text-xs font-bold text-white">
+                    <div className="flex items-center gap-2.5 px-3 py-1.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2342F5] text-xs font-bold text-white">
                         {initials(user.name)}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-[#0E1633] truncate">{user.name}</p>
-                        <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                        <p className="text-xs font-bold text-[#0E1633] truncate">{user.name}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                       </div>
                     </div>
                     <Link
                       href="/dashboard"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-4 py-3 text-sm font-semibold text-white"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-4 py-2.5 text-xs font-semibold text-white shadow-sm"
                     >
-                      <LayoutDashboard size={16} />
+                      <LayoutDashboard size={15} />
                       Go to Dashboard
                     </Link>
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-600"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-600"
                     >
-                      <LogOut size={16} />
+                      <LogOut size={15} />
                       Log out
                     </button>
                   </div>
@@ -203,17 +207,17 @@ export default function Navbar() {
                     <Link
                       href="/login"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-center rounded-xl border border-[#D5DBEB] bg-white px-5 py-3 text-sm font-semibold text-[#0E1633] transition hover:bg-[#EEF1FF]"
+                      className="flex items-center justify-center rounded-xl border border-[#D5DBEB] bg-white px-4 py-2.5 text-xs font-semibold text-[#0E1633] transition hover:bg-[#EEF1FF]"
                     >
                       Log In
                     </Link>
                     <Link
                       href="/register"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1A33C9]"
+                      className="flex items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#1A33C9]"
                     >
                       Get Started
-                      <ArrowRight size={16} />
+                      <ArrowRight size={15} />
                     </Link>
                   </div>
                 )}
@@ -224,9 +228,9 @@ export default function Navbar() {
                     setMenuOpen(false);
                     setJoinDevOpen(true);
                   }}
-                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-[#2342F5]/30 bg-[#EEF1FF] px-4 py-3 text-xs font-bold text-[#2342F5]"
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#2342F5]/30 bg-[#EEF1FF] px-4 py-2.5 text-xs font-bold text-[#2342F5]"
                 >
-                  <Users size={15} />
+                  <Users size={14} />
                   <span>Join Development Team</span>
                 </button>
               </div>

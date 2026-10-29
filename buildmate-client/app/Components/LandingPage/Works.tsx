@@ -51,7 +51,7 @@ export default function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="relative overflow-hidden bg-white px-6 py-20 text-[#0E1633] md:px-10 md:py-28"
+      className="relative overflow-hidden bg-white px-4 py-14 text-[#0E1633] sm:px-6 sm:py-20 md:px-10 md:py-28"
     >
       <div className="mx-auto max-w-7xl">
         {/* Header */}
@@ -62,18 +62,18 @@ export default function HowItWorks() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-3xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#D5DBEB] bg-[#F4F6FB] px-4 py-2 text-sm font-medium text-[#5B6584]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#D5DBEB] bg-[#F4F6FB] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-[#5B6584]">
             <span className="h-2 w-2 rounded-full bg-[#2342F5]" />
             How It Works
           </span>
 
-          <h2 className="mt-6 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+          <h2 className="mt-5 font-display text-2xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-6xl">
             From idea to team.
             <br />
             <span className="text-[#2342F5]">It's that simple.</span>
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[#5B6584] sm:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#5B6584] sm:text-lg sm:leading-8">
             Your next project starts with an idea and the right people.
             Build-Mate helps bring them together.
           </p>
@@ -126,7 +126,7 @@ export default function HowItWorks() {
                     {step.title}
                   </h3>
 
-                  <p className="mt-3 min-h-[112px] text-sm leading-7 text-[#5B6584]">
+                  <p className="mt-3 min-h-0 sm:min-h-[112px] text-sm leading-relaxed text-[#5B6584]">
                     {step.description}
                   </p>
 

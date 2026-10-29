@@ -43,7 +43,7 @@ export default function Team() {
         backgroundSize: "40px 40px",
       }}
     >
-      <div className="mx-auto max-w-7xl px-6 py-20 md:px-10 md:py-28">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 md:px-10 md:py-28">
         {/* Section heading */}
         <motion.div
           initial={reduce ? false : { opacity: 0, y: 20 }}
@@ -52,18 +52,18 @@ export default function Team() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-3xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#D5DBEB] bg-white px-4 py-2 text-sm font-medium text-[#5B6584]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#D5DBEB] bg-white px-3.5 py-1.5 text-xs sm:text-sm font-medium text-[#5B6584]">
             <span className="h-2 w-2 rounded-full bg-[#FFB620]" />
             The people behind the product
           </span>
 
-          <h2 className="mt-6 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+          <h2 className="mt-5 font-display text-2xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-6xl">
             Built by students.
             <br />
             <span className="text-[#2342F5]">Driven by ideas.</span>
           </h2>
 
-          <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-[#4A5473] sm:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#4A5473] sm:text-lg sm:leading-8">
             Build-Mate is built by Team Build-Mate — a student-led
             tech community turning ambitious ideas into real products.
           </p>
@@ -205,21 +205,21 @@ export default function Team() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setJoinDevOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#2342F5] px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-[#2342F5]/25 hover:bg-[#1A33C9] transition"
+              className="inline-flex justify-center items-center gap-2 rounded-xl bg-[#2342F5] px-4 py-2.5 sm:px-6 sm:py-3.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#2342F5]/25 hover:bg-[#1A33C9] transition"
             >
-              <Users size={16} />
+              <Users size={15} />
               <span>Join Development Team</span>
             </button>
             <a
               href="/ideas"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#0E1633] bg-white px-5 py-3.5 text-sm font-semibold text-[#0E1633] hover:bg-[#0E1633] hover:text-white transition"
+              className="inline-flex justify-center items-center gap-2 rounded-xl border border-[#0E1633] bg-white px-4 py-2.5 sm:px-5 sm:py-3.5 text-xs sm:text-sm font-semibold text-[#0E1633] hover:bg-[#0E1633] hover:text-white transition"
             >
               <span>Explore Ideas</span>
-              <ArrowUpRight size={16} />
+              <ArrowUpRight size={15} />
             </a>
           </div>
         </motion.div>

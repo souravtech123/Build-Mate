@@ -40,7 +40,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="relative overflow-hidden bg-white px-6 py-20 text-[#0E1633] md:px-10 md:py-28"
+      className="relative overflow-hidden bg-white px-4 py-14 text-[#0E1633] sm:px-6 sm:py-20 md:px-10 md:py-28"
     >
       <div className="mx-auto max-w-7xl">
         {/* Section Heading */}
@@ -51,17 +51,17 @@ export default function About() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-3xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#D5DBEB] bg-[#F4F6FB] px-4 py-2 text-sm font-medium text-[#5B6584]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#D5DBEB] bg-[#F4F6FB] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-[#5B6584]">
             <span className="h-2 w-2 rounded-full bg-[#2342F5]" />
             About Build-Mate
           </span>
 
-          <h2 className="mt-6 font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+          <h2 className="mt-5 font-display text-2xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-6xl">
             Great projects start with{" "}
             <span className="text-[#2342F5]">the right people.</span>
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-[#5B6584] sm:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-[#5B6584] sm:text-lg sm:leading-8">
             Build-Mate helps students find project partners, bring ideas
             to life, and build beyond the classroom.
           </p>

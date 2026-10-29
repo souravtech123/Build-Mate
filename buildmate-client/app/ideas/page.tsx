@@ -592,10 +592,11 @@ function IdeasContent() {
 
             <Link
               href="/ideas/create"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#2342F5] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#2342F5]/15 transition hover:bg-[#1A33C9]"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-xl bg-[#2342F5] px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#2342F5]/15 transition hover:bg-[#1A33C9]"
             >
-              <Sparkles className="h-4 w-4" />
-              Post a Project
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Post a Project</span>
+              <span className="sm:hidden">Post</span>
             </Link>
 
             <button

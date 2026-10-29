@@ -423,9 +423,9 @@ function DashboardContent() {
       </header>
 
       {/* Dashboard Body */}
-      <div className="mx-auto max-w-7xl px-6 py-8 md:px-10">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:px-10">
         {/* User Profile Header Card */}
-        <div className="relative overflow-hidden rounded-3xl border border-[#D5DBEB] bg-white p-6 sm:p-8 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#D5DBEB] bg-white p-4 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#2342F5] text-xl font-bold font-display text-white shadow-lg shadow-[#2342F5]/25">
@@ -453,10 +453,10 @@ function DashboardContent() {
             </div>
 
             {/* Quick Navigation Tabs */}
-            <div className="flex items-center gap-2 rounded-2xl border border-[#D5DBEB] bg-[#F8FAFF] p-1.5">
+            <div className="flex w-full sm:w-auto items-center gap-1.5 sm:gap-2 overflow-x-auto rounded-2xl border border-[#D5DBEB] bg-[#F8FAFF] p-1.5 scrollbar-none">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                   activeTab === "overview"
                     ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
                     : "text-slate-600 hover:text-[#0E1633]"
@@ -467,7 +467,7 @@ function DashboardContent() {
               </button>
               <button
                 onClick={() => setActiveTab("profile")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                   activeTab === "profile"
                     ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
                     : "text-slate-600 hover:text-[#0E1633]"
@@ -478,7 +478,7 @@ function DashboardContent() {
               </button>
               <button
                 onClick={() => setActiveTab("tasks")}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                   activeTab === "tasks"
                     ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
                     : "text-slate-600 hover:text-[#0E1633]"

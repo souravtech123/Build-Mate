@@ -92,24 +92,23 @@ func (ac *AuthController) Register(c *gin.Context) {
 	if err := ac.DB.Where("LOWER(email) = ?", email).First(&existingUser).Error; err == nil {
 		// If existing user is unverified, allow resending OTP instead of erroring
 		if !existingUser.IsVerified {
-			otp := generateNumericOTP()
-			expiresAt := time.Now().Add(15 * time.Minute)
-			existingUser.VerificationOTP = otp
-			existingUser.OTPExpiresAt = &expiresAt
 			existingUser.Name = strings.TrimSpace(req.Name)
 			existingUser.College = strings.TrimSpace(req.College)
 			existingUser.Skills = req.Skills
 			existingUser.PlainPassword = req.Password
 			_ = existingUser.HashPassword(req.Password)
+			existingUser.IsVerified = true
+			existingUser.VerificationOTP = ""
+			existingUser.OTPExpiresAt = nil
 			ac.DB.Save(&existingUser)
 
-			_ = ac.EmailService.SendOTP(existingUser.Email, existingUser.Name, otp)
+			token, _ := services.GenerateToken(existingUser.ID, existingUser.Email, ac.JWTSecret)
 
 			c.JSON(http.StatusOK, gin.H{
-				"success":               true,
-				"requires_verification": true,
-				"email":                 existingUser.Email,
-				"message":               "An account with this email was pending verification. We've sent a new 6-digit code to your email.",
+				"success": true,
+				"token":   token,
+				"user":    existingUser,
+				"message": "Account activated successfully! Welcome to Build-Mate.",
 			})
 			return
 		}
@@ -127,18 +126,13 @@ func (ac *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	otp := generateNumericOTP()
-	expiresAt := time.Now().Add(15 * time.Minute)
-
 	user := models.User{
-		Name:            strings.TrimSpace(req.Name),
-		Email:           email,
-		College:         strings.TrimSpace(req.College),
-		Skills:          req.Skills,
-		IsVerified:      false,
-		VerificationOTP: otp,
-		OTPExpiresAt:    &expiresAt,
-		PlainPassword:   req.Password,
+		Name:          strings.TrimSpace(req.Name),
+		Email:         email,
+		College:       strings.TrimSpace(req.College),
+		Skills:        req.Skills,
+		IsVerified:    true,
+		PlainPassword: req.Password,
 	}
 
 	if err := user.HashPassword(req.Password); err != nil {
@@ -157,14 +151,20 @@ func (ac *AuthController) Register(c *gin.Context) {
 		return
 	}
 
-	// Dispatch verification code to email
-	_ = ac.EmailService.SendOTP(user.Email, user.Name, otp)
+	token, err := services.GenerateToken(user.ID, user.Email, ac.JWTSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to generate authentication token",
+		})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"success":               true,
-		"requires_verification": true,
-		"email":                 user.Email,
-		"message":               "Account created! A 6-digit verification code has been sent to your email. Please verify to continue.",
+		"success": true,
+		"token":   token,
+		"user":    user,
+		"message": "Account created successfully! Welcome to Build-Mate.",
 	})
 }
 
@@ -348,23 +348,12 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	// Enforce OTP verification before allowing login
+	// Automatically mark user as verified if they weren't
 	if !user.IsVerified {
-		otp := generateNumericOTP()
-		expiresAt := time.Now().Add(15 * time.Minute)
-		user.VerificationOTP = otp
-		user.OTPExpiresAt = &expiresAt
+		user.IsVerified = true
+		user.VerificationOTP = ""
+		user.OTPExpiresAt = nil
 		ac.DB.Save(&user)
-
-		_ = ac.EmailService.SendOTP(user.Email, user.Name, otp)
-
-		c.JSON(http.StatusForbidden, gin.H{
-			"success":               false,
-			"requires_verification": true,
-			"email":                 user.Email,
-			"message":               "Please verify your email address. A 6-digit verification code has been sent to your inbox.",
-		})
-		return
 	}
 
 	token, err := services.GenerateToken(user.ID, user.Email, ac.JWTSecret)

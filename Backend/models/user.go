@@ -17,7 +17,7 @@ type User struct {
 	Skills    []string       `gorm:"serializer:json" json:"skills"`
 	IsAdmin         bool           `gorm:"default:false" json:"is_admin"`
 	IsBlocked       bool           `gorm:"default:false" json:"is_blocked"`
-	IsVerified      bool           `gorm:"default:false" json:"is_verified"`
+	IsVerified      bool           `gorm:"default:true" json:"is_verified"`
 	VerificationOTP string         `gorm:"size:10" json:"-"`
 	OTPExpiresAt    *time.Time     `json:"-"`
 	Bio             string         `gorm:"type:text" json:"bio"`

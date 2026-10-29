@@ -504,18 +504,18 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-5 py-4 text-sm font-semibold text-white shadow-md shadow-[#2342F5]/20 transition hover:bg-[#1A33C9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2342F5] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-4 py-3 sm:px-5 sm:py-4 text-xs sm:text-sm font-semibold text-white shadow-md shadow-[#2342F5]/20 transition hover:bg-[#1A33C9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2342F5] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? (
                     <>
-                      <Loader2 size={17} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" />
                       Signing in...
                     </>
                   ) : (
                     <>
                       Sign in
                       <ArrowRight
-                        size={17}
+                        size={16}
                         className="transition-transform group-hover:translate-x-1"
                       />
                     </>

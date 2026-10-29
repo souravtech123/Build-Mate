@@ -85,7 +85,7 @@ export default function MobileAppBanner() {
   return (
     <section
       id="mobile-app"
-      className="relative overflow-hidden bg-[#0E1633] py-20 font-body text-white sm:py-28"
+      className="relative overflow-hidden bg-[#0E1633] px-4 py-14 font-body text-white sm:px-6 sm:py-20 md:px-10 md:py-28"
     >
       {/* Blueprint grid accent */}
       <div
@@ -108,7 +108,7 @@ export default function MobileAppBanner() {
         className="pointer-events-none absolute -right-20 bottom-1/4 h-80 w-80 rounded-full bg-[#FFB620]/20 blur-3xl"
       />
 
-      <div className="relative mx-auto max-w-7xl px-6 md:px-10">
+      <div className="relative mx-auto max-w-7xl">
         <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
           {/* Left Column: Heading, Perks, CTAs */}
           <motion.div
@@ -127,11 +127,11 @@ export default function MobileAppBanner() {
               <span>📱 OFFICIAL MOBILE APP IS COMING</span>
             </div>
 
-            <h2 className="mt-6 font-display text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">
+            <h2 className="mt-5 font-display text-2xl font-black tracking-tight sm:text-4xl lg:text-6xl">
               Build-Mate in Your Pocket<span className="text-[#2342F5]">.</span>
             </h2>
 
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-lg">
               We’re bringing the complete student collaboration experience to iOS & Android.
               Discover groundbreaking campus ideas, get real-time chat notifications from project owners,
               and assemble your dream team anywhere, anytime.
@@ -181,24 +181,24 @@ export default function MobileAppBanner() {
             </div>
 
             {/* CTAs */}
-            <div className="mt-10 flex flex-wrap items-center gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <button
                 onClick={() => setModalOpen(true)}
-                className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-2xl bg-[#2342F5] px-6 py-4 text-sm font-extrabold text-white shadow-xl shadow-[#2342F5]/30 transition hover:bg-[#1936DF] hover:shadow-2xl"
+                className="group relative inline-flex justify-center items-center gap-2 overflow-hidden rounded-xl bg-[#2342F5] px-4 py-2.5 sm:px-6 sm:py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-[#2342F5]/30 transition hover:bg-[#1936DF]"
               >
-                <Smartphone size={18} />
+                <Smartphone size={16} />
                 <span>Book the App Now</span>
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
                   VIP Early Access
                 </span>
-                <ChevronRight size={16} className="transition group-hover:translate-x-1" />
+                <ChevronRight size={14} className="transition group-hover:translate-x-1" />
               </button>
 
               <button
                 onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-4 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
+                className="inline-flex justify-center items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 sm:px-5 sm:py-3.5 text-xs sm:text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
               >
-                <Download size={18} />
+                <Download size={16} />
                 <span>Download APK (Beta)</span>
               </button>
             </div>
