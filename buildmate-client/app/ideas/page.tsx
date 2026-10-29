@@ -17,6 +17,7 @@ import {
   Sparkles,
   Layers3,
   Trash2,
+  Edit3,
   UserPlus,
   Users,
   CheckCircle,
@@ -36,6 +37,7 @@ import {
 } from "lucide-react";
 import { useCurrentUser, getStoredToken, clearAuth } from "../lib/auth";
 import FeedbackModal from "../Components/FeedbackModal";
+import EditProjectModal from "../Components/EditProjectModal";
 
 import { API_BASE as API_URL } from "@/api";
 
@@ -177,6 +179,17 @@ function IdeasContent() {
 
   // Delete project confirmation modal
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<ProjectIdea | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleIdeaUpdated = (updated: any) => {
+    setSelectedIdea((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev));
+    setIdeas((prev) => prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)));
+    setFeedback({
+      type: "success",
+      text: "Project details updated successfully!",
+    });
+  };
 
   const fetchIdeas = useCallback(async () => {
     if (!user) return; // Don't fetch if not logged in
@@ -998,16 +1011,28 @@ function IdeasContent() {
                 </Link>
 
                 {isOwner && (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(true)}
-                    disabled={actionLoading}
-                    title="Delete project"
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
-                  >
-                    <Trash2 size={13} />
-                    Delete
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditingIdea(selectedIdea)}
+                      disabled={actionLoading}
+                      title="Edit project"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-[#2342F5]/30 bg-[#EEF1FF] px-3 py-1.5 text-xs font-bold text-[#2342F5] transition hover:bg-[#2342F5] hover:text-white"
+                    >
+                      <Edit3 size={13} />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(true)}
+                      disabled={actionLoading}
+                      title="Delete project"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100"
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
+                  </>
                 )}
 
                 <button
@@ -1474,6 +1499,16 @@ function IdeasContent() {
 
       {/* Feedback & Suggestions Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* EDIT PROJECT MODAL (OWNER) */}
+      {editingIdea && (
+        <EditProjectModal
+          isOpen={Boolean(editingIdea)}
+          project={editingIdea}
+          onClose={() => setEditingIdea(null)}
+          onProjectUpdated={handleIdeaUpdated}
+        />
+      )}
     </main>
   );
 }

@@ -151,6 +151,47 @@ func (s *IdeaService) CreateIdea(idea *models.ProjectIdea) (*models.ProjectIdea,
 	return idea, nil
 }
 
+// UpdateIdea updates a project idea if the caller is the owner
+func (s *IdeaService) UpdateIdea(id uint, ownerID string, updateData *models.ProjectIdea) (*models.ProjectIdea, error) {
+	var idea models.ProjectIdea
+	err := s.DB.Where("id = ?", id).First(&idea).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrIdeaNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find project: %w", err)
+	}
+
+	if idea.OwnerID != ownerID {
+		return nil, ErrUnauthorized
+	}
+
+	updates := map[string]interface{}{
+		"title":             updateData.Title,
+		"description":       updateData.Description,
+		"category":          updateData.Category,
+		"difficulty":        updateData.Difficulty,
+		"technologies":      updateData.Technologies,
+		"required_skills":   updateData.RequiredSkills,
+		"team_requirements": updateData.TeamRequirements,
+		"goal":              updateData.Goal,
+		"fund_plans":        updateData.FundPlans,
+		"target_fund":       updateData.TargetFund,
+		"github_url":        updateData.GithubURL,
+		"live_demo_url":     updateData.LiveDemoURL,
+	}
+
+	if err := s.DB.Model(&idea).Updates(updates).Error; err != nil {
+		return nil, fmt.Errorf("update project: %w", err)
+	}
+
+	if err := s.DB.Where("id = ?", id).First(&idea).Error; err != nil {
+		return nil, fmt.Errorf("reload project: %w", err)
+	}
+
+	return &idea, nil
+}
+
 // DeleteIdea removes a project idea if the caller is the owner
 func (s *IdeaService) DeleteIdea(id uint, ownerID string) error {
 	var idea models.ProjectIdea
@@ -166,6 +207,12 @@ func (s *IdeaService) DeleteIdea(id uint, ownerID string) error {
 		return ErrUnauthorized
 	}
 
+	// Delete chat messages
+	_ = s.DB.Where("project_id = ?", id).Delete(&models.ChatMessage{}).Error
+	// Delete reward tickets
+	_ = s.DB.Where("project_id = ?", id).Delete(&models.RewardTicket{}).Error
+	// Delete tasks
+	_ = s.DB.Where("project_id = ?", id).Delete(&models.ProjectTask{}).Error
 	// Delete join requests for this project
 	if err := s.DB.Where("project_id = ?", id).Delete(&models.JoinRequest{}).Error; err != nil {
 		return fmt.Errorf("delete join requests: %w", err)
@@ -366,6 +413,12 @@ func (s *IdeaService) AdminDeleteIdea(id uint) error {
 		return fmt.Errorf("find project: %w", err)
 	}
 
+	// Delete chat messages
+	_ = s.DB.Where("project_id = ?", id).Delete(&models.ChatMessage{}).Error
+	// Delete reward tickets
+	_ = s.DB.Where("project_id = ?", id).Delete(&models.RewardTicket{}).Error
+	// Delete tasks
+	_ = s.DB.Where("project_id = ?", id).Delete(&models.ProjectTask{}).Error
 	// Delete join requests for this project
 	if err := s.DB.Where("project_id = ?", id).Delete(&models.JoinRequest{}).Error; err != nil {
 		return fmt.Errorf("delete join requests: %w", err)

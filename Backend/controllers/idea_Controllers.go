@@ -177,6 +177,97 @@ func (ic *IdeaController) CreateIdea(c *gin.Context) {
 	})
 }
 
+type UpdateIdeaRequest struct {
+	Title            string `json:"title" binding:"required,min=3,max=200"`
+	Description      string `json:"description" binding:"required,min=10"`
+	Category         string `json:"category"`
+	Difficulty       string `json:"difficulty"`
+	Technologies     string `json:"technologies"`
+	RequiredSkills   string `json:"required_skills"`
+	TeamRequirements string `json:"team_requirements"`
+	Goal             string `json:"goal"`
+	FundPlans        string `json:"fund_plans"`
+	TargetFund       string `json:"target_fund"`
+	GithubURL        string `json:"github_url"`
+	LiveDemoURL      string `json:"live_demo_url"`
+}
+
+// PUT /api/v1/ideas/:id
+func (ic *IdeaController) UpdateIdea(c *gin.Context) {
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success": false,
+			"message": "Unauthorized",
+		})
+		return
+	}
+	userID := userIDVal.(uint)
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Invalid project ID",
+		})
+		return
+	}
+
+	var req UpdateIdeaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Validation error: " + err.Error(),
+		})
+		return
+	}
+
+	updateData := models.ProjectIdea{
+		Title:            strings.TrimSpace(req.Title),
+		Description:      strings.TrimSpace(req.Description),
+		Category:         strings.TrimSpace(req.Category),
+		Difficulty:       strings.TrimSpace(req.Difficulty),
+		Technologies:     strings.TrimSpace(req.Technologies),
+		RequiredSkills:   strings.TrimSpace(req.RequiredSkills),
+		TeamRequirements: strings.TrimSpace(req.TeamRequirements),
+		Goal:             strings.TrimSpace(req.Goal),
+		FundPlans:        strings.TrimSpace(req.FundPlans),
+		TargetFund:       strings.TrimSpace(req.TargetFund),
+		GithubURL:        strings.TrimSpace(req.GithubURL),
+		LiveDemoURL:      strings.TrimSpace(req.LiveDemoURL),
+	}
+
+	updatedIdea, err := ic.IdeaService.UpdateIdea(uint(id), strconv.Itoa(int(userID)), &updateData)
+	if err != nil {
+		if errors.Is(err, services.ErrIdeaNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": "Project not found",
+			})
+			return
+		}
+		if errors.Is(err, services.ErrUnauthorized) {
+			c.JSON(http.StatusForbidden, gin.H{
+				"success": false,
+				"message": "You can only edit projects you created",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Failed to update project: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Project updated successfully",
+		"data":    updatedIdea,
+	})
+}
+
 // DELETE /api/v1/ideas/:id
 func (ic *IdeaController) DeleteIdea(c *gin.Context) {
 	userIDVal, exists := c.Get("userID")

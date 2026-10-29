@@ -34,6 +34,8 @@ import {
   Award,
   Zap,
   Ticket,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 import {
   useCurrentUser,
@@ -52,6 +54,8 @@ import {
 import { API_BASE } from "@/api";
 import FeedbackModal from "../Components/FeedbackModal";
 import RewardTicketModal from "../Components/RewardTicketModal";
+import EditProjectModal, { EditableProject } from "../Components/EditProjectModal";
+import DeleteProjectModal from "../Components/DeleteProjectModal";
 
 const AVAILABLE_SKILLS = [
   "Frontend",
@@ -133,6 +137,39 @@ function DashboardContent() {
   const showToast = (text: string, type: "success" | "error" = "success") => {
     setToast({ text, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  // Owner edit & delete project modal state
+  const [editingProject, setEditingProject] = useState<EditableProject | null>(null);
+  const [deletingProject, setDeletingProject] = useState<{ id: number; title: string } | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDashboardProjectUpdated = (updated: any) => {
+    setSummary((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        projects: prev.projects.map((proj) =>
+          proj.id === updated.id ? { ...proj, ...updated } : proj
+        ),
+      };
+    });
+    showToast("Project details updated successfully!");
+  };
+
+  const handleDashboardProjectDeleted = (projectId: number) => {
+    setSummary((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        projects: prev.projects.filter((proj) => proj.id !== projectId),
+        stats: {
+          ...prev.stats,
+          total_projects: Math.max(0, prev.stats.total_projects - 1),
+        },
+      };
+    });
+    showToast("Project deleted successfully!");
   };
 
   // Mount effect and session restore
@@ -722,12 +759,32 @@ function DashboardContent() {
 
                       <div className="mt-4 flex items-center justify-between border-t border-[#E8ECF5] pt-3 text-xs">
                         <span className="text-slate-500 font-medium">{p.category || "General"}</span>
-                        <Link
-                          href={`/ideas/${p.id}`}
-                          className="font-bold text-[#2342F5] hover:underline inline-flex items-center gap-1"
-                        >
-                          View workspace <ArrowUpRight size={13} />
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setEditingProject(p)}
+                            title="Edit Project"
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#D5DBEB] bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#2342F5]/40 hover:bg-[#EEF1FF] hover:text-[#2342F5] transition"
+                          >
+                            <Edit3 size={12} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingProject(p)}
+                            title="Delete Project"
+                            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-100 transition"
+                          >
+                            <Trash2 size={12} />
+                            <span>Delete</span>
+                          </button>
+                          <Link
+                            href={`/ideas/${p.id}`}
+                            className="font-bold text-[#2342F5] hover:underline inline-flex items-center gap-0.5 ml-1"
+                          >
+                            <span>Workspace</span> <ArrowUpRight size={13} />
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1444,6 +1501,26 @@ function DashboardContent() {
         <RewardTicketModal
           ticket={selectedTicket}
           onClose={() => setSelectedTicket(null)}
+        />
+      )}
+
+      {/* EDIT PROJECT MODAL (OWNER) */}
+      {editingProject && (
+        <EditProjectModal
+          isOpen={Boolean(editingProject)}
+          project={editingProject}
+          onClose={() => setEditingProject(null)}
+          onProjectUpdated={handleDashboardProjectUpdated}
+        />
+      )}
+
+      {/* DELETE PROJECT MODAL (OWNER) */}
+      {deletingProject && (
+        <DeleteProjectModal
+          isOpen={Boolean(deletingProject)}
+          project={deletingProject}
+          onClose={() => setDeletingProject(null)}
+          onProjectDeleted={handleDashboardProjectDeleted}
         />
       )}
     </main>

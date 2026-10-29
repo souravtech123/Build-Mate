@@ -37,6 +37,8 @@ func RegisterIdeaRoutes(router *gin.Engine, db *gorm.DB, jwtSecret string) {
 		protected.Use(middleware.AuthMiddleware(jwtSecret))
 		{
 			protected.POST("", ideaController.CreateIdea)
+			protected.PUT("/:id", ideaController.UpdateIdea)
+			protected.PATCH("/:id", ideaController.UpdateIdea)
 			protected.DELETE("/:id", ideaController.DeleteIdea)
 			protected.POST("/:id/join", ideaController.ApplyToJoin)
 			protected.GET("/:id/requests", ideaController.GetJoinRequests)

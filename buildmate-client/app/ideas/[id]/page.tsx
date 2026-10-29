@@ -33,6 +33,7 @@ import {
   Zap,
   Plus,
   Trash2,
+  Edit3,
   Play,
   CheckSquare,
   Tag,
@@ -53,6 +54,8 @@ import TeamChat from "../../Components/TeamChat";
 import CreateTaskModal from "../../Components/CreateTaskModal";
 import CompleteTaskModal from "../../Components/CompleteTaskModal";
 import RewardTicketModal from "../../Components/RewardTicketModal";
+import EditProjectModal from "../../Components/EditProjectModal";
+import DeleteProjectModal from "../../Components/DeleteProjectModal";
 
 import { API_BASE } from "@/api";
 
@@ -174,6 +177,25 @@ function ProjectDetailContent() {
   // Applicant review action loading
   const [reviewLoadingId, setReviewLoadingId] = useState<number | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Owner edit & delete project state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const showToast = (text: string, type: "success" | "error" = "success") => {
+    setToast({ text, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleProjectUpdated = (updatedProject: ProjectIdea) => {
+    setProject(updatedProject);
+    showToast("Project details updated successfully!");
+  };
+
+  const handleProjectDeleted = () => {
+    router.push("/dashboard");
+  };
 
   // Check user relation
   const isOwner = useMemo(() => {
@@ -449,6 +471,25 @@ function ProjectDetailContent() {
 
   return (
     <main className="min-h-screen bg-[#F4F6FB] text-[#0E1633]">
+      {/* Toast Feedback */}
+      {toast && (
+        <div
+          role="status"
+          className={`fixed right-5 top-5 z-50 flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-xl backdrop-blur-md ${
+            toast.type === "success"
+              ? "border-emerald-200 bg-white/95 text-emerald-800"
+              : "border-rose-200 bg-white/95 text-rose-800"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle size={18} className="text-emerald-600" />
+          ) : (
+            <AlertCircle size={18} className="text-rose-600" />
+          )}
+          <span>{toast.text}</span>
+        </div>
+      )}
+
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 border-b border-[#D5DBEB] bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8">
@@ -521,27 +562,51 @@ function ProjectDetailContent() {
           {/* Subtle gradient flair */}
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#2342F5]/5 blur-3xl" />
 
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="rounded-full bg-[#EEF1FF] px-3 py-1 text-xs font-bold text-[#2342F5]">
-              {project.category || "Technology Project"}
-            </span>
-            {project.difficulty && (
-              <span className="rounded-full border border-[#D5DBEB] bg-[#F8FAFF] px-3 py-1 text-xs font-semibold text-[#4A5473]">
-                {project.difficulty} Level
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-[#EEF1FF] px-3 py-1 text-xs font-bold text-[#2342F5]">
+                {project.category || "Technology Project"}
               </span>
-            )}
-            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
-              Active Project
-            </span>
+              {project.difficulty && (
+                <span className="rounded-full border border-[#D5DBEB] bg-[#F8FAFF] px-3 py-1 text-xs font-semibold text-[#4A5473]">
+                  {project.difficulty} Level
+                </span>
+              )}
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                Active Project
+              </span>
+              {isOwner && (
+                <span className="rounded-full border border-[#2342F5]/30 bg-[#EEF1FF] px-3 py-1 text-xs font-bold text-[#2342F5]">
+                  Your Project (Owner)
+                </span>
+              )}
+              {isAcceptedMember && !isOwner && (
+                <span className="rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">
+                  You are a Team Member
+                </span>
+              )}
+            </div>
+
+            {/* Owner Actions: Edit & Delete Buttons */}
             {isOwner && (
-              <span className="rounded-full border border-[#2342F5]/30 bg-[#EEF1FF] px-3 py-1 text-xs font-bold text-[#2342F5]">
-                Your Project (Owner)
-              </span>
-            )}
-            {isAcceptedMember && !isOwner && (
-              <span className="rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-bold text-purple-700">
-                You are a Team Member
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-[#2342F5]/30 bg-[#EEF1FF] px-3.5 py-1.5 text-xs font-bold text-[#2342F5] hover:bg-[#2342F5] hover:text-white transition shadow-xs"
+                >
+                  <Edit3 size={13} />
+                  <span>Edit Project</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-600 hover:text-white transition shadow-xs"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -1477,6 +1542,26 @@ function ProjectDetailContent() {
         <RewardTicketModal
           ticket={selectedTicket}
           onClose={() => setSelectedTicket(null)}
+        />
+      )}
+
+      {/* EDIT PROJECT MODAL (OWNER) */}
+      {showEditModal && (
+        <EditProjectModal
+          isOpen={showEditModal}
+          project={project}
+          onClose={() => setShowEditModal(false)}
+          onProjectUpdated={handleProjectUpdated}
+        />
+      )}
+
+      {/* DELETE PROJECT MODAL (OWNER) */}
+      {showDeleteModal && (
+        <DeleteProjectModal
+          isOpen={showDeleteModal}
+          project={project}
+          onClose={() => setShowDeleteModal(false)}
+          onProjectDeleted={handleProjectDeleted}
         />
       )}
     </main>
