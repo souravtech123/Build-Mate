@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Code2, Menu, X, User as UserIcon, LayoutDashboard, LogOut, Users } from "lucide-react";
+import { ArrowRight, Code2, Menu, X, User as UserIcon, LayoutDashboard, LogOut, Users, Award, Settings } from "lucide-react";
 import { useCurrentUser, clearAuth } from "../../lib/auth";
 import JoinDevTeamModal from "../JoinDevTeamModal";
 import InstallPWAButton from "../InstallPWAButton";
@@ -185,14 +185,32 @@ export default function Navbar() {
                         <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                       </div>
                     </div>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#2342F5] px-4 py-2.5 text-xs font-semibold text-white shadow-sm"
-                    >
-                      <LayoutDashboard size={15} />
-                      Go to Dashboard
-                    </Link>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      <Link
+                        href="/dashboard?tab=overview"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl bg-[#2342F5] px-4 py-2.5 text-xs font-semibold text-white shadow-sm"
+                      >
+                        <LayoutDashboard size={16} />
+                        <span>Dashboard Overview</span>
+                      </Link>
+                      <Link
+                        href="/dashboard?tab=tasks"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl border border-[#D5DBEB] bg-white px-4 py-2 text-xs font-semibold text-[#0E1633] transition hover:bg-[#EEF1FF]"
+                      >
+                        <Award size={16} className="text-[#2342F5]" />
+                        <span>Tasks & Rewards</span>
+                      </Link>
+                      <Link
+                        href="/dashboard?tab=profile"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl border border-[#D5DBEB] bg-white px-4 py-2 text-xs font-semibold text-[#0E1633] transition hover:bg-[#EEF1FF]"
+                      >
+                        <Settings size={16} className="text-[#2342F5]" />
+                        <span>Profile Settings</span>
+                      </Link>
+                    </div>
                     <button
                       type="button"
                       onClick={handleLogout}

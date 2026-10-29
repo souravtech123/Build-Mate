@@ -92,14 +92,30 @@ function formatDate(value?: string) {
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get("tab") === "profile" ? "profile" : "overview";
+  const tabParam = searchParams.get("tab");
+  const initialTab = tabParam === "profile" ? "profile" : tabParam === "tasks" ? "tasks" : "overview";
 
   const user = useCurrentUser();
   const [mounted, setMounted] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "profile" | "tasks">(
-    searchParams.get("tab") === "tasks" ? "tasks" : initialTab
-  );
+  const [activeTab, setActiveTab] = useState<"overview" | "profile" | "tasks">(initialTab);
+
+  // Sync tab with searchParams changes
+  useEffect(() => {
+    const currentTab = searchParams.get("tab");
+    if (currentTab === "tasks" || currentTab === "profile" || currentTab === "overview") {
+      setActiveTab(currentTab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: "overview" | "profile" | "tasks") => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
 
   // Summary data
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -423,7 +439,7 @@ function DashboardContent() {
       </header>
 
       {/* Dashboard Body */}
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:px-10">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 md:px-10 pb-28 sm:pb-10">
         {/* User Profile Header Card */}
         <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-[#D5DBEB] bg-white p-4 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -452,11 +468,12 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Quick Navigation Tabs */}
-            <div className="flex w-full sm:w-auto items-center gap-1.5 sm:gap-2 overflow-x-auto rounded-2xl border border-[#D5DBEB] bg-[#F8FAFF] p-1.5 scrollbar-none">
+            {/* Quick Navigation Tabs (Desktop & Tablet) */}
+            <div className="hidden sm:flex items-center gap-2 rounded-2xl border border-[#D5DBEB] bg-[#F8FAFF] p-1.5">
               <button
-                onClick={() => setActiveTab("overview")}
-                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                type="button"
+                onClick={() => handleTabChange("overview")}
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                   activeTab === "overview"
                     ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
                     : "text-slate-600 hover:text-[#0E1633]"
@@ -466,19 +483,9 @@ function DashboardContent() {
                 Projects & Applications
               </button>
               <button
-                onClick={() => setActiveTab("profile")}
-                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
-                  activeTab === "profile"
-                    ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
-                    : "text-slate-600 hover:text-[#0E1633]"
-                }`}
-              >
-                <Settings size={15} />
-                Profile Settings
-              </button>
-              <button
-                onClick={() => setActiveTab("tasks")}
-                className={`flex shrink-0 items-center gap-1.5 sm:gap-2 rounded-xl px-3 sm:px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                type="button"
+                onClick={() => handleTabChange("tasks")}
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
                   activeTab === "tasks"
                     ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
                     : "text-slate-600 hover:text-[#0E1633]"
@@ -487,12 +494,83 @@ function DashboardContent() {
                 <Award size={15} />
                 <span>Tasks & Rewards</span>
                 {userTickets.length > 0 && (
-                  <span className="rounded-full bg-emerald-100 text-emerald-800 px-1.5 py-0.2 text-[10px] font-bold">
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      activeTab === "tasks"
+                        ? "bg-white/20 text-white"
+                        : "bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
                     {userTickets.length}
                   </span>
                 )}
               </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange("profile")}
+                className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap ${
+                  activeTab === "profile"
+                    ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20"
+                    : "text-slate-600 hover:text-[#0E1633]"
+                }`}
+              >
+                <Settings size={15} />
+                Profile Settings
+              </button>
             </div>
+          </div>
+
+          {/* Quick Navigation Tabs (Mobile 3-Column Grid: 100% visible, fully accessible without horizontal scroll) */}
+          <div className="mt-5 grid grid-cols-3 gap-1 rounded-2xl border border-[#D5DBEB] bg-[#F8FAFF] p-1 sm:hidden">
+            <button
+              type="button"
+              onClick={() => handleTabChange("overview")}
+              className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2.5 px-1 text-center transition ${
+                activeTab === "overview"
+                  ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20 font-bold"
+                  : "text-[#5B6584] hover:text-[#0E1633] font-semibold"
+              }`}
+            >
+              <Layers3 size={17} />
+              <span className="text-[11px] leading-tight">Projects</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("tasks")}
+              className={`relative flex flex-col items-center justify-center gap-1 rounded-xl py-2.5 px-1 text-center transition ${
+                activeTab === "tasks"
+                  ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20 font-bold"
+                  : "text-[#5B6584] hover:text-[#0E1633] font-semibold"
+              }`}
+            >
+              <div className="relative">
+                <Award size={17} />
+                {userTickets.length > 0 && (
+                  <span
+                    className={`absolute -top-1.5 -right-3 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+                      activeTab === "tasks"
+                        ? "bg-amber-400 text-slate-900"
+                        : "bg-emerald-500 text-white"
+                    }`}
+                  >
+                    {userTickets.length}
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] leading-tight">Tasks & XP</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange("profile")}
+              className={`flex flex-col items-center justify-center gap-1 rounded-xl py-2.5 px-1 text-center transition ${
+                activeTab === "profile"
+                  ? "bg-[#2342F5] text-white shadow-md shadow-[#2342F5]/20 font-bold"
+                  : "text-[#5B6584] hover:text-[#0E1633] font-semibold"
+              }`}
+            >
+              <Settings size={17} />
+              <span className="text-[11px] leading-tight">Profile</span>
+            </button>
           </div>
         </div>
 
@@ -1290,6 +1368,73 @@ function DashboardContent() {
           </div>
         )}
       </div>
+
+      {/* Persistent Mobile Bottom Navigation Bar (Docked & easily accessible anywhere on mobile) */}
+      <nav
+        aria-label="Mobile Dashboard Navigation"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#D5DBEB] bg-white/95 px-3 py-1.5 backdrop-blur-md sm:hidden shadow-lg shadow-black/10"
+      >
+        <div className="mx-auto flex max-w-md items-center justify-around">
+          <button
+            type="button"
+            onClick={() => {
+              handleTabChange("overview");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition ${
+              activeTab === "overview"
+                ? "text-[#2342F5] font-bold"
+                : "text-[#5B6584] hover:text-[#0E1633] font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-lg ${activeTab === "overview" ? "bg-[#EEF1FF]" : ""}`}>
+              <Layers3 size={18} />
+            </div>
+            <span className="text-[10px] leading-tight">Projects</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              handleTabChange("tasks");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`relative flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition ${
+              activeTab === "tasks"
+                ? "text-[#2342F5] font-bold"
+                : "text-[#5B6584] hover:text-[#0E1633] font-medium"
+            }`}
+          >
+            <div className={`relative p-1 rounded-lg ${activeTab === "tasks" ? "bg-[#EEF1FF]" : ""}`}>
+              <Award size={18} />
+              {userTickets.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-bold text-white shadow-xs">
+                  {userTickets.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] leading-tight">Tasks & XP</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              handleTabChange("profile");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition ${
+              activeTab === "profile"
+                ? "text-[#2342F5] font-bold"
+                : "text-[#5B6584] hover:text-[#0E1633] font-medium"
+            }`}
+          >
+            <div className={`p-1 rounded-lg ${activeTab === "profile" ? "bg-[#EEF1FF]" : ""}`}>
+              <Settings size={18} />
+            </div>
+            <span className="text-[10px] leading-tight">Profile</span>
+          </button>
+        </div>
+      </nav>
 
       {/* Feedback & Suggestions Modal */}
       <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />

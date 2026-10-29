@@ -599,32 +599,34 @@ function ProjectDetailContent() {
         </section>
 
         {/* WORKSPACE NAVIGATION TABS */}
-        <div className="mb-6 flex border-b border-[#D5DBEB]">
+        <div className="mb-6 flex overflow-x-auto scrollbar-none border-b border-[#D5DBEB] -mx-4 px-4 sm:mx-0 sm:px-0">
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
-            className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap ${
               activeTab === "overview"
                 ? "border-[#2342F5] text-[#2342F5]"
                 : "border-transparent text-[#5B6584] hover:text-[#0E1633]"
             }`}
           >
             <Layers size={16} />
-            <span>Project Details & Plans</span>
+            <span className="hidden sm:inline">Project Details & Plans</span>
+            <span className="sm:hidden">Details</span>
           </button>
 
           {isTeamMate && (
             <button
               type="button"
               onClick={() => setActiveTab("chat")}
-              className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition ${
+              className={`flex shrink-0 items-center gap-2 border-b-2 px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap ${
                 activeTab === "chat"
                   ? "border-[#2342F5] text-[#2342F5]"
                   : "border-transparent text-[#5B6584] hover:text-[#0E1633]"
               }`}
             >
               <MessageSquare size={16} />
-              <span>Team Mate Chat (Live)</span>
+              <span className="hidden sm:inline">Team Mate Chat (Live)</span>
+              <span className="sm:hidden">Chat</span>
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             </button>
           )}
@@ -633,14 +635,15 @@ function ProjectDetailContent() {
             <button
               type="button"
               onClick={() => setActiveTab("applicants")}
-              className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition ${
+              className={`flex shrink-0 items-center gap-2 border-b-2 px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap ${
                 activeTab === "applicants"
                   ? "border-[#2342F5] text-[#2342F5]"
                   : "border-transparent text-[#5B6584] hover:text-[#0E1633]"
               }`}
             >
               <Users size={16} />
-              <span>Review Join Requests</span>
+              <span className="hidden sm:inline">Review Join Requests</span>
+              <span className="sm:hidden">Applicants</span>
               {pendingApplicantsCount > 0 && (
                 <span className="rounded-full bg-[#2342F5] px-2 py-0.5 text-[10px] font-bold text-white">
                   {pendingApplicantsCount}
@@ -653,14 +656,15 @@ function ProjectDetailContent() {
           <button
             type="button"
             onClick={() => setActiveTab("tasks")}
-            className={`flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-bold transition ${
+            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 sm:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-bold transition whitespace-nowrap ${
               activeTab === "tasks"
                 ? "border-[#2342F5] text-[#2342F5]"
                 : "border-transparent text-[#5B6584] hover:text-[#0E1633]"
             }`}
           >
             <Award size={16} />
-            <span>Tasks & Rewards</span>
+            <span className="hidden sm:inline">Tasks & Rewards</span>
+            <span className="sm:hidden">Tasks & XP</span>
             {tasks.length > 0 && (
               <span className="rounded-full bg-blue-100 text-[#2342F5] px-2 py-0.5 text-[10px] font-bold">
                 {tasks.length}
